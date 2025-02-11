@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ConnectButton,
   useCurrentAccount,
@@ -7,12 +7,75 @@ import {
 } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 import { getRoute, swapPTB } from "navi-aggregator-sdk";
+import { createChart, IChartApi } from "lightweight-charts";
 
+// Map your token symbols to coin types
 const COIN_TYPE_MAP: Record<string, string> = {
   SUI: "0x2::sui::SUI",
   USDC: "0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC",
 };
 
+// ----------------------------------------------------------
+// Lightweight Chart Component (replacing TradingView widget)
+// ----------------------------------------------------------
+const TradingViewChart: React.FC = () => {
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+
+  useEffect(() => {
+    if (!chartContainerRef.current) return;
+
+    // Create the chart with your preferred options
+    chartRef.current = createChart(chartContainerRef.current, {
+      width: chartContainerRef.current.clientWidth,
+      height: 300,
+      layout: {
+        backgroundColor: "#ffffff",
+        textColor: "#333",
+      },
+      grid: {
+        vertLines: { color: "#eee" },
+        horzLines: { color: "#eee" },
+      },
+    });
+
+    // Add a line series with sample data (replace with real data as needed)
+    const lineSeries = chartRef.current.addLineSeries({
+      color: "#2196F3",
+      lineWidth: 2,
+    });
+    lineSeries.setData([
+      { time: "2022-01-01", value: 80.01 },
+      { time: "2022-01-02", value: 96.63 },
+      { time: "2022-01-03", value: 76.64 },
+      { time: "2022-01-04", value: 81.89 },
+      { time: "2022-01-05", value: 74.43 },
+    ]);
+
+    // Handle responsiveness
+    const handleResize = () => {
+      if (chartContainerRef.current && chartRef.current) {
+        chartRef.current.applyOptions({
+          width: chartContainerRef.current.clientWidth,
+        });
+      }
+    };
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      chartRef.current?.remove();
+    };
+  }, []);
+
+  return (
+    <div ref={chartContainerRef} style={{ width: "100%", height: "300px" }} />
+  );
+};
+
+// ----------------------------------------------------------
+// Main Swap Component (with Navi SDK integration)
+// ----------------------------------------------------------
 const Swap: React.FC = () => {
   const [fromToken, setFromToken] = useState<string>("SUI");
   const [toToken, setToToken] = useState<string>("USDC");
@@ -26,6 +89,7 @@ const Swap: React.FC = () => {
     useSignAndExecuteTransaction();
   const suiClient = useSuiClient();
 
+  // Fetch quote from your API whenever tokens or amount changes
   useEffect(() => {
     const fetchQuote = async () => {
       if (!amount) {
@@ -54,6 +118,7 @@ const Swap: React.FC = () => {
     fetchQuote();
   }, [fromToken, toToken, amount]);
 
+  // Fetch a coin object for the selected token
   const fetchCoinObject = async (): Promise<string> => {
     if (!currentAccount) {
       throw new Error("Wallet not connected");
@@ -68,6 +133,7 @@ const Swap: React.FC = () => {
     return coinsResponse.data.coins[0].coinObjectId;
   };
 
+  // Handle the token swap
   const handleSwap = async () => {
     if (!currentAccount) {
       alert("Please connect your wallet first.");
@@ -130,6 +196,10 @@ const Swap: React.FC = () => {
   return (
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-4">Token Swap</h2>
+
+      {/* Render the chart (using Lightweight Charts) */}
+      <TradingViewChart />
+
       {currentAccount ? (
         <p>Connected as: {currentAccount.address}</p>
       ) : (
