@@ -1,3 +1,4 @@
+// src/main.tsx
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";
@@ -19,10 +20,16 @@ const networkConfig = {
   testnet: { url: getFullnodeUrl("testnet"), transport: fetch },
 };
 
-// Use default network from env or fallback to "mainnet"
+// Use default network from environment variables or fallback to "mainnet"
 const defaultNetwork = import.meta.env.VITE_SUI_NETWORK || "mainnet";
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+// Get the root element from the HTML.
+const rootElement = document.getElementById("root");
+if (!rootElement) {
+  throw new Error("Root element not found in index.html");
+}
+
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>

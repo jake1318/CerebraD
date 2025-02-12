@@ -7,17 +7,15 @@ import {
 } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 import { getRoute, swapPTB } from "navi-aggregator-sdk";
-import { createChart, IChartApi } from "lightweight-charts";
+import { createChart, IChartApi, CrosshairMode } from "lightweight-charts";
 
-// Map your token symbols to coin types
+// Map token symbols to coin types
 const COIN_TYPE_MAP: Record<string, string> = {
   SUI: "0x2::sui::SUI",
   USDC: "0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC",
 };
 
-// ----------------------------------------------------------
-// Lightweight Chart Component (replacing TradingView widget)
-// ----------------------------------------------------------
+// Lightweight Chart Component using Lightweight Charts
 const TradingViewChart: React.FC = () => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -25,7 +23,7 @@ const TradingViewChart: React.FC = () => {
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
-    // Create the chart with your preferred options
+    // Create the chart with desired options
     chartRef.current = createChart(chartContainerRef.current, {
       width: chartContainerRef.current.clientWidth,
       height: 300,
@@ -36,6 +34,9 @@ const TradingViewChart: React.FC = () => {
       grid: {
         vertLines: { color: "#eee" },
         horzLines: { color: "#eee" },
+      },
+      crosshair: {
+        mode: CrosshairMode.Normal,
       },
     });
 
@@ -52,7 +53,7 @@ const TradingViewChart: React.FC = () => {
       { time: "2022-01-05", value: 74.43 },
     ]);
 
-    // Handle responsiveness
+    // Update chart width on window resize
     const handleResize = () => {
       if (chartContainerRef.current && chartRef.current) {
         chartRef.current.applyOptions({
@@ -61,7 +62,6 @@ const TradingViewChart: React.FC = () => {
       }
     };
     window.addEventListener("resize", handleResize);
-
     return () => {
       window.removeEventListener("resize", handleResize);
       chartRef.current?.remove();
@@ -73,9 +73,7 @@ const TradingViewChart: React.FC = () => {
   );
 };
 
-// ----------------------------------------------------------
-// Main Swap Component (with Navi SDK integration)
-// ----------------------------------------------------------
+// Main Swap Component with Navi SDK integration
 const Swap: React.FC = () => {
   const [fromToken, setFromToken] = useState<string>("SUI");
   const [toToken, setToToken] = useState<string>("USDC");
@@ -89,7 +87,7 @@ const Swap: React.FC = () => {
     useSignAndExecuteTransaction();
   const suiClient = useSuiClient();
 
-  // Fetch quote from your API whenever tokens or amount changes
+  // Fetch quote when tokens or amount changes
   useEffect(() => {
     const fetchQuote = async () => {
       if (!amount) {
@@ -118,7 +116,7 @@ const Swap: React.FC = () => {
     fetchQuote();
   }, [fromToken, toToken, amount]);
 
-  // Fetch a coin object for the selected token
+  // Fetch coin object for the selected token from the SUI client
   const fetchCoinObject = async (): Promise<string> => {
     if (!currentAccount) {
       throw new Error("Wallet not connected");
@@ -133,7 +131,7 @@ const Swap: React.FC = () => {
     return coinsResponse.data.coins[0].coinObjectId;
   };
 
-  // Handle the token swap
+  // Handle the token swap using Navi SDK
   const handleSwap = async () => {
     if (!currentAccount) {
       alert("Please connect your wallet first.");
@@ -197,7 +195,7 @@ const Swap: React.FC = () => {
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-4">Token Swap</h2>
 
-      {/* Render the chart (using Lightweight Charts) */}
+      {/* Render the Lightweight Chart */}
       <TradingViewChart />
 
       {currentAccount ? (
